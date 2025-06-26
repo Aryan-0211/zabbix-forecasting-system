@@ -1,0 +1,35 @@
+{
+  "host": "ClientA",
+  "metric": "cpu_load",
+  "prediction_time": "2025-05-28T19:38:18.636085",
+  "metrics": {
+    "rmse": 0.016396318099144495,
+    "mae": 0.014851166666666667,
+    "mape": 465.7331455496611,
+    "r2": 0.16408210767186526,
+    "points": 3
+  },
+  "comparison_data": [
+    {
+      "index": "2025-05-28T19:40:00",
+      "actual": 0.0,
+      "forecasted_value": 0.0084,
+      "lower_bound": 0.0,
+      "upper_bound": 0.0534
+    },
+    {
+      "index": "2025-05-28T19:45:00",
+      "actual": 0.03869625,
+      "forecasted_value": 0.0142,
+      "lower_bound": 0.0,
+      "upper_bound": 0.0661
+    },
+    {
+      "index": "2025-05-28T19:50:00",
+      "actual": 0.00134275,
+      "forecasted_value": 0.013,
+      "lower_bound": 0.0,
+      "upper_bound": 0.0676
+    }
+  ]
+}

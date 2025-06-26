@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zabbix Forecast Graph Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: 30px auto; padding: 25px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; text-align: center; margin-bottom: 25px; }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="datetime-local"], select {
+            width: calc(100% - 18px); /* Adjust for padding and border */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+        button {
+            grid-column: 1 / -1; /* Span across both columns */
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover { background-color: #218838; }
+        .graph-area, .metrics-area {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .graph-area img { max-width: 100%; height: auto; display: block; margin: 15px auto; border: 1px solid #ccc; }
+        .metrics-area h3 { color: #0056b3; margin-bottom: 10px; }
+        .metrics-area ul { list-style-type: none; padding: 0; }
+        .metrics-area li { background-color: #e9f5ff; margin-bottom: 5px; padding: 8px 12px; border-radius: 4px; border-left: 4px solid #007bff; }
+        .error-message { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zabbix Forecast Graph Viewer</h1>
+
+        <form action="/interactive_graph_display" method="get">
+            <div class="form-group">
+                <label for="host">Host:</label>
+                <select id="host" name="host" required>
+                    <option value="ClientA">ClientA</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label for="metric">Metric:</label>
+                <select id="metric" name="metric" required>
+                    <option value="cpu_load">CPU Load</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label for="start_time">Start Time (YYYY-MM-DDTHH:MM):</label>
+                <input type="datetime-local" id="start_time" name="start_time" value="{{ default_start_time }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="end_time">End Time (YYYY-MM-DDTHH:MM):</label>
+                <input type="datetime-local" id="end_time" name="end_time" value="{{ default_end_time }}" required>
+            </div>
+
+            <button type="submit">View Graph</button>
+        </form>
+
+        {% if plot_url %}
+        <div class="graph-area">
+            <h2>Graph for {{ host_name }} - {{ metric_friendly_name }} ({{ start_time }} to {{ end_time }})</h2>
+            <img src="{{ plot_url }}" alt="Forecast Graph">
+        </div>
+        {% endif %}
+
+        {% if metrics and metrics.points > 0 %}
+        <div class="metrics-area">
+            <h3>Accuracy Metrics for Filtered Period:</h3>
+            <ul>
+                <li>RMSE: {{ "%.4f" | format(metrics.rmse) }}</li>
+                <li>MAE: {{ "%.4f" | format(metrics.mae) }}</li>
+                <li>MAPE: {{ "%.1f" | format(metrics.mape) }}%</li>
+                <li>R²: {{ "%.4f" | format(metrics.r2) }}</li>
+                <li>Points: {{ metrics.points }}</li>
+            </ul>
+        </div>
+        {% elif plot_url %} {# If plot_url is there but no metrics, means no comparison data #}
+        <div class="metrics-area">
+            <p>No comparison data points found in the selected range to calculate metrics.</p>
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+        <p class="error-message">Error: {{ error_message }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

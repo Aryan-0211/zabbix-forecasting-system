@@ -1,0 +1,63 @@
+# Use a Python 3.10 slim image (smaller size, still based on Debian)
+FROM python:3.10-slim-buster
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# --- START: User Permissions for Volume Mounting ---
+# Define build arguments for UID and GID
+# IMPORTANT: Replace these with the actual UID and GID of the user on your host VM
+# that will own the mounted volumes.
+ARG HOST_UID=177865735
+ARG HOST_GID=177800513
+
+# Create a group and user inside the container matching the host's UID/GID
+# This is crucial for file permissions when mounting volumes
+RUN addgroup --gid $HOST_GID appgroup && \
+    adduser --uid $HOST_UID --gid $HOST_GID --shell /bin/bash --disabled-password --gecos "" appuser
+
+# --- END: User Permissions ---
+
+# Copy the requirements file and install dependencies
+# This is done first to leverage Docker's build cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of your application code into the container
+# This includes app.py, src/, configs/, templates/, static/ (initial structure)
+COPY . .
+
+# Ensure the directories for data persistence are created within /app
+# These directories will hold generated files like models, logs, and plots.
+# They should align with the paths expected by app.py (relative to BASE_DIR /app)
+# We'll then mount Docker volumes to these specific paths.
+RUN mkdir -p /app/models \
+            /app/static/accuracy_plots \
+            /app/comparison_results/json_reports \
+            /app/configs \
+            /app/src/models \
+            /app/src/utils \
+            /app/templates
+
+# Create empty placeholder files that app.py expects to append to,
+# ensuring they exist with correct ownership for the appuser.
+# This prevents permission errors if a mounted volume is empty initially.
+RUN touch /app/predictions_log.csv \
+          /app/cpu_load_log.csv \
+          /app/comparison_results/processed_batches.txt
+
+# --- Permissions for the application user ---
+# Change ownership of all files in /app to the appuser.
+# This is vital so the app can read/write to its own directories without root privileges.
+RUN chown -R appuser:appgroup /app
+
+# Switch to the non-root user
+USER appuser
+
+# Expose the port your Flask app runs on (5050 as defined in app.py)
+EXPOSE 5050
+
+# Command to run the Flask app when the container starts
+# This will be the default entry point for the main app service.
+# For the accuracy_checker, this CMD will be overridden in docker-compose.
+CMD ["gunicorn", "-w", "4", "-k", "gevent", "-t", "180", "-b", "0.0.0.0:5050", "app:app"]

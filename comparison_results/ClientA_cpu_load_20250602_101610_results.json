@@ -1,0 +1,98 @@
+{
+  "host": "ClientA",
+  "metric": "cpu_load",
+  "prediction_time": "2025-06-02T10:16:10.837870",
+  "metrics": {
+    "rmse": 0.7841401561694424,
+    "mae": 0.6261778333333333,
+    "mape": 18.837538973709393,
+    "r2": -469.50800591360013,
+    "points": 12
+  },
+  "comparison_data": [
+    {
+      "index": "2025-06-02T10:20:00",
+      "actual": 3.33557125,
+      "forecasted_value": 2.1198,
+      "lower_bound": 1.3562,
+      "upper_bound": 2.8834
+    },
+    {
+      "index": "2025-06-02T10:25:00",
+      "actual": 3.282653875,
+      "forecasted_value": 2.7841,
+      "lower_bound": 2.0205,
+      "upper_bound": 3.5478
+    },
+    {
+      "index": "2025-06-02T10:30:00",
+      "actual": 3.324707,
+      "forecasted_value": 3.4846,
+      "lower_bound": 2.6956,
+      "upper_bound": 4.2735
+    },
+    {
+      "index": "2025-06-02T10:35:00",
+      "actual": 3.329040625,
+      "forecasted_value": 3.5169,
+      "lower_bound": 2.7265,
+      "upper_bound": 4.3073
+    },
+    {
+      "index": "2025-06-02T10:40:00",
+      "actual": 3.32330325,
+      "forecasted_value": 3.4036,
+      "lower_bound": 2.608,
+      "upper_bound": 4.1992
+    },
+    {
+      "index": "2025-06-02T10:45:00",
+      "actual": 3.3579102499999998,
+      "forecasted_value": 2.8283,
+      "lower_bound": 2.0326,
+      "upper_bound": 3.624
+    },
+    {
+      "index": "2025-06-02T10:50:00",
+      "actual": 3.26879875,
+      "forecasted_value": 2.2393,
+      "lower_bound": 1.4436,
+      "upper_bound": 3.035
+    },
+    {
+      "index": "2025-06-02T10:55:00",
+      "actual": 3.30346675,
+      "forecasted_value": 2.0019,
+      "lower_bound": 1.2057,
+      "upper_bound": 2.7981
+    },
+    {
+      "index": "2025-06-02T11:00:00",
+      "actual": 3.3777466250000003,
+      "forecasted_value": 2.0391,
+      "lower_bound": 1.2423,
+      "upper_bound": 2.8359
+    },
+    {
+      "index": "2025-06-02T11:05:00",
+      "actual": 3.354431,
+      "forecasted_value": 2.5348,
+      "lower_bound": 1.7377,
+      "upper_bound": 3.3319
+    },
+    {
+      "index": "2025-06-02T11:10:00",
+      "actual": 3.2828980000000003,
+      "forecasted_value": 3.3495,
+      "lower_bound": 2.5521,
+      "upper_bound": 4.1469
+    },
+    {
+      "index": "2025-06-02T11:15:00",
+      "actual": 3.257995625,
+      "forecasted_value": 3.5442,
+      "lower_bound": 2.7464,
+      "upper_bound": 4.342
+    }
+  ]
+}

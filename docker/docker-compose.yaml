@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        HOST_UID: 177865735
+        HOST_GID: 177800513
+    container_name: zabbix_forecaster_app
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./models:/app/models
+      - ./static/accuracy_plots:/app/static/accuracy_plots
+      - ./comparison_results:/app/comparison_results
+      - ./predictions_log.csv:/app/predictions_log.csv
+      - ./cpu_load_log.csv:/app/cpu_load_log.csv
+    env_file:
+      - ./.env # <--- CORRECTED PATH: Now points directly to ./.env in the project root
+    restart: always
+    user: appuser
+    environment:
+      PYTHONUNBUFFERED: 1
+
+  accuracy_checker:
+    build:
+      context: .
+      args:
+        HOST_UID: 177865735
+        HOST_GID: 177800513
+    container_name: zabbix_accuracy_checker
+    volumes:
+      - ./models:/app/models
+      - ./static/accuracy_plots:/app/static/accuracy_plots
+      - ./comparison_results:/app/comparison_results
+      - ./predictions_log.csv:/app/predictions_log.csv
+      - ./cpu_load_log.csv:/app/cpu_load_log.csv
+    env_file:
+      - ./.env # <--- CORRECTED PATH: Now points directly to ./.env in the project root
+    command: sh -c "while true; do python accuracy_checker.py; sleep 900; done"
+    restart: always
+    user: appuser
+    environment:
+      PYTHONUNBUFFERED: 1

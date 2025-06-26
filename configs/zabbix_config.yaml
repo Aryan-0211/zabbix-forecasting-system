@@ -1,0 +1,22 @@
+hosts:
+  "ClientA":  # Hostname as shown in Zabbix
+    metrics:
+      cpu_load:
+        key: "system.cpu.load[all,avg1]"
+        friendly_name: "CPU Load (1min Average)"
+        threshold: 1.5  # Warning threshold
+      memory_used:
+        key: "vm.memory.size[used]"
+        threshold: 8589934592  # 8GB in bytes
+      disk_root:
+        key: "vfs.fs.size[/,used]"
+        threshold: 32212254720  # 30GB in bytes
+  
+  "ClientB":
+    metrics:
+      cpu_load:
+        key: "system.cpu.load[all,avg1]"
+        threshold: 1.5
+      network_in:
+        key: "net.if.in[eth0]"
+        threshold: 104857600  # 100MB/s

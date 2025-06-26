@@ -1,0 +1,33 @@
+# Environment variables
+.env             # Crucial: DO NOT commit your API keys!
+
+# Python bytecode and virtual environments
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg-info/
+.Python
+venv/            # If you create a virtual environment named 'venv'
+env/             # If you create a virtual environment named 'env'
+
+# Logs and generated data files (created by your app)
+*.log
+logs/
+cpu_load_log.csv
+predictions_log.csv
+
+# Trained models (can be large, best to regenerate on deploy)
+models/          # This will ignore all pickled models
+
+# Generated plots and comparison results
+static/accuracy_plots/
+comparison_results/json_reports/
+comparison_results/processed_batches.txt
+
+# Operating System / IDE files
+.DS_Store        # macOS system files
+.idea/           # PyCharm/IntelliJ IDE files
+.vscode/         # VS Code configuration
+*.swp            # Vim swap files
+*~               # Backup files from some editors

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Zabbix Forecast Graph</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 25px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #0056b3; text-align: center; margin-bottom: 25px; }
+        #graph-container {
+            width: 100%;
+            height: 800px; /* Adjust height as needed */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+            margin-top: 20px;
+            position: relative;
+            /*display: flex; /* To center text if no graph */
+            /*align-items: center;*/
+            /*justify-content: center;*/
+        }
+        .metrics-area {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .metrics-area h3 { color: #0056b3; margin-bottom: 10px; }
+        .metrics-area ul { list-style-type: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: space-around;}
+        .metrics-area li { background-color: #e9f5ff; margin: 5px; padding: 8px 12px; border-radius: 4px; border-left: 4px solid #007bff; flex: 1 1 auto; min-width: 150px; text-align: center;}
+        .error-message { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Zabbix Forecast Graph</h1>
+        <h2 id="graphTitle">Loading Graph...</h2>
+        <div id="graph-container">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div id="metrics-area" class="metrics-area" style="display: none;">
+            <h3>Accuracy Metrics for Filtered Period:</h3>
+            <ul id="metrics-list">
+                </ul>
+        </div>
+
+        <p id="error-message" class="error-message" style="display: none;"></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const host = urlParams.get('host');
+            const metric = urlParams.get('metric');
+            const startTime = urlParams.get('start_time');
+            const endTime = urlParams.get('end_time');
+
+            const graphTitleElement = document.getElementById('graphTitle');
+            const graphContainer = document.getElementById('graph-container');
+            const metricsArea = document.getElementById('metrics-area');
+            const metricsList = document.getElementById('metrics-list');
+            const errorMessageElement = document.getElementById('error-message');
+
+            if (!host || !metric || !startTime || !endTime) {
+                errorMessageElement.style.display = 'block';
+                errorMessageElement.textContent = 'Error: Missing host, metric, or time parameters in URL.';
+                graphTitleElement.textContent = 'Graph Data Missing';
+                graphContainer.innerHTML = ''; // Clear spinner
+                return;
+            }
+
+            graphTitleElement.textContent = `Graph for ${host} - ${metric} (${startTime} to ${endTime})`;
+            const apiUrl = `/view_accuracy_graph/${host}/${metric}/${startTime}/${endTime}`;
+        
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        // If HTTP status is not 2xx, throw an error
+                        return response.text().then(text => { throw new Error(response.status + ': ' + text) });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    graphContainer.innerHTML = ''; // Clear loading spinner
+
+                    if (data.status === 'success' && data.graph_data) {
+                        const graphData = data.graph_data;
+                        const metrics = data.metrics_for_filtered_period;
+
+                        const traces = [];
+
+                        // Trace for Historical Data (blue)
+                        if (graphData.historical_timestamps && graphData.historical_timestamps.length > 0) {
+                            traces.push({
+                                x: graphData.historical_timestamps,
+                                y: graphData.historical_values,
+                                mode: 'lines',
+                                name: 'Historical Data',
+                                line: { color: 'blue', width: 1.5 }
+                            });
+                        }
+
+                        // Trace for Actual Data (green, more prominent)
+                        if (graphData.actual_timestamps && graphData.actual_timestamps.length > 0) {
+                            traces.push({
+                                x: graphData.actual_timestamps,
+                                y: graphData.actual_values,
+                                mode: 'lines+markers',
+                                name: 'Actual Data',
+                                marker: { symbol: 'circle', size: 6, color: 'darkgreen' },
+                                line: { color: 'darkgreen', width: 2.5 }
+                            });
+                        }
+
+                        // Trace for Forecasted Data (red)
+                        if (graphData.forecasted_values && graphData.forecasted_values.length > 0) {
+                            traces.push({
+                                x: graphData.actual_timestamps, // Use actual_timestamps for forecast as they are aligned
+                                y: graphData.forecasted_values,
+                                mode: 'lines+markers',
+                                name: 'Forecasted',
+                                marker: { symbol: 'square', size: 6, color: 'red' },
+                                line: { color: 'red', width: 2 }
+                            });
+
+                            // Trace for Confidence Interval (pink fill)
+                            // X-axis for fill should go forward then backward to close the shape
+                            traces.push({
+                                x: graphData.actual_timestamps.concat(graphData.actual_timestamps.slice().reverse()),
+                                y: graphData.upper_bound.concat(graphData.lower_bound.slice().reverse()),
+                                fill: 'toself',
+                                fillcolor: 'rgba(255,192,203,0.3)', // Pink with transparency
+                                line: { color: 'transparent' },
+                                name: '95% CI',
+                                showlegend: true
+                            });
+                        }
+
+
+                        const layout = {
+                            title: `Forecast Analysis: ${host} - ${metric} (Filtered)`,
+                            xaxis: {
+                                title: 'Time',
+                                type: 'date',
+                                rangeslider: { visible: true }, // Enable rangeslider for horizontal scrolling
+                                rangeselector: { // Buttons for quick date range selection (like in manager's example)
+                                    buttons: [
+                                        {
+                                            count: 1, label: '1h', step: 'hour', stepmode: 'backward'
+                                            // The step_attributes were causing syntax errors, removed them.
+                                        },
+                                        {
+                                            count: 6, label: '6h', step: 'hour', stepmode: 'backward',
+                                        },
+                                        {
+                                            count: 1, label: '1d', step: 'day', stepmode: 'backward',
+                                        },
+                                        { step: 'all', label: 'All' }
+                                    ]
+                                }
+                            },
+                            yaxis: {
+                                title: 'Value',
+                                fixedrange: false // Allow y-axis zooming
+                            },
+                            hovermode: 'x unified', // Show tooltips for all traces at a given x
+                            plot_bgcolor: 'rgba(240, 240, 240, 0.8)',
+                            paper_bgcolor: 'white',
+                            font: { family: "Arial, sans-serif", size: 12, color: "black" },
+                            autosize: true,
+                            margin: { l: 50, r: 50, b: 50, t: 80, pad: 4 }
+                        };
+
+                        const config = {
+                            responsive: true, // Chart resizes with window
+                            scrollZoom: true, // Enable mouse wheel zoom
+                            displayModeBar: true // Show the modebar on hover
+                        };
+
+                        Plotly.newPlot('graph-container', traces, layout, config);
+
+                        // Display metrics
+                        if (metrics && metrics.points > 0) {
+                            metricsArea.style.display = 'block';
+                            metricsList.innerHTML = `
+                                <li>RMSE: ${metrics.rmse.toFixed(4)}</li>
+                                <li>MAE: ${metrics.mae.toFixed(4)}</li>
+                                <li>MAPE: ${metrics.mape.toFixed(1)}%</li>
+                                <li>R²: ${metrics.r2.toFixed(4)}</li>
+                                <li>Points: ${metrics.points}</li>
+                            `;
+                        } else {
+                            metricsArea.style.display = 'block';
+                            metricsList.innerHTML = `<li>No comparison data points found in the selected range to calculate metrics.</li>`;
+                        }
+
+                    } else {
+                        errorMessageElement.style.display = 'block';
+                        errorMessageElement.textContent = data.error || 'Unknown error occurred while fetching graph data.';
+                        graphTitleElement.textContent = 'Could Not Load Graph';
+                    }
+                })
+                .catch(error => {
+                    graphContainer.innerHTML = ''; // Clear spinner
+                    errorMessageElement.style.display = 'block';
+                    errorMessageElement.textContent = `Error fetching graph data: ${error.message}. Please check server logs.`;
+                    graphTitleElement.textContent = 'Error Loading Graph';
+                    console.error('Fetch error:', error);
+                });
+        });
+    </script>
+</body>
+</html>
